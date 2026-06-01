@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>GrainTCP VLESS 手搓面板</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 950px; margin: 20px auto; padding: 20px; background-color: #f4f6f9; color: #333; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h2, h3 { margin-top: 0; color: #0056b3; border-bottom: 2px solid #e9ecef; padding-bottom: 10px; }
+        .form-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
+        .form-group { flex: 1; min-width: 200px; display: flex; flex-direction: column; }
+        label { font-weight: bold; margin-bottom: 6px; font-size: 14px; color: #495057; }
+        input[type="text"], select, textarea { padding: 10px; border: 1px solid #ced4da; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #007bff; box-shadow: 0 0 0 3px rgba(0,123,255,0.15); }
+        textarea { height: 120px; resize: vertical; font-family: monospace; }
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        button { padding: 12px 24px; font-size: 14px; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s; }
+        .btn-mix { background-color: #6f42c1; color: white; }
+        .btn-mix:hover { background-color: #59359a; }
+        #output { width: 100%; height: 250px; font-family: monospace; background-color: #212529; color: #f8f9fa; border: none; padding: 15px; border-radius: 6px; font-size: 13px; margin-top: 10px; }
+        .status-msg { margin-top: 5px; font-size: 13px; font-weight: bold; }
+        .text-success { color: #28a745; }
+        .text-danger { color: #dc3545; }
+        .note { font-size: 12px; color: #6c757d; margin-top: 4px; }
+    </style>
+</head>
+<body>
+
+    <h2>GrainTCP VLESS 手搓面板</h2>
+    
+    <div class="card">
+        <h3>1. 核心参数与自定义后端</h3>
+        <div class="form-row">
+            <div class="form-group" style="flex: 1.5;">
+                <label>你的 UUID (CFG.id):</label>
+                <input type="text" id="uuid" value="88888888-8888-8888-8888-888888888888" oninput="saveConfig()">
+            </div>
+            <div class="form-group" style="flex: 1.5;">
+                <label>HOST / SNI 域名:</label>
+                <input type="text" id="worker" value="你的Worker域名.workers.dev" oninput="saveConfig()">
+            </div>
+            <div class="form-group" style="flex: 1.2;">
+                <label>自定义节点别名:</label>
+                <input type="text" id="customAlias" value="" placeholder="默认: GrainTCP-Proxy/Turn" oninput="saveConfig()">
+                <div class="note">留空保持默认后缀，无序号</div>
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label>核心路由模式:</label>
+                <select id="mode" onchange="toggleFields(); saveConfig();">
+                    <option value="1">模式 1：ProxyIP 反代落地</option>
+                    <option value="2">模式 2：TURN 隧道落地</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group" id="proxyIpGroup" style="flex: 2.5;">
+                <label>自定义 ProxyIP 落地地址 (留空使用代码内置落地):</label>
+                <input type="text" id="customProxyIp" value="" placeholder="例如: ProxyIP.SG.CMLiussss.net" oninput="saveConfig()">
+            </div>
+            <div class="form-group" id="turnIpGroup" style="display: none; flex: 2.5;">
+                <label>自定义 TURN 落地地址 (支持账号密码格式):</label>
+                <input type="text" id="customTurnIp" value="" placeholder="例如: username:password@turn_host:3478" oninput="saveConfig()">
+            </div>
+            <div class="form-group" style="flex: 0.5; min-width: 120px;">
+                <label>Early Data 大小:</label>
+                <input type="text" id="edValue" value="2560" oninput="saveConfig()">
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>2. 接入前端配置 (支持双源同时启用)</h3>
+        
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label style="color: #28a745;">【渠道 A】输入优选 IP 池的 API 链接 (没有可留空):</label>
+            <input type="text" id="apiUrl" placeholder="https://api.yourdomain.com/get_cloudflare_ip" oninput="saveConfig()">
+            <div id="apiStatus" class="status-msg"></div>
+        </div>
+
+        <div class="form-group">
+            <label style="color: #007bff;">【渠道 B】手动粘贴额外固定的 IP / 域名列表 (没有可留空):</label>
+            <textarea id="iplist" placeholder="47.76.218.163#🇭🇰HK&#10;47.57.181.17#🇭🇰HK" oninput="saveConfig()"></textarea>
+        </div>
+        
+        <div class="btn-group">
+            <button class="btn-mix" onclick="mixAndGenerate()">⚡ 聚合并一键生成全部节点</button>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h3>3. 混合组装结果</h3>
+        <div style="justify-content: space-between; display: flex; align-items: center; margin-bottom: 5px;">
+            <span style="font-size: 14px; color: #6c757d;" id="nodeCount">当前生成节点数: 0</span>
+            <button style="padding: 5px 10px; font-size: 12px; background-color: #6c757d; color: white;" onclick="copyToClipboard()">一键全选复制</button>
+        </div>
+        <textarea id="output" readonly placeholder="等待混合组装完成..."></textarea>
+    </div>
+
+    <script>
+        // 页面加载时自动读取保存的配置
+        window.onload = function() {
+            loadConfig();
+            toggleFields();
+        };
+
+        function toggleFields() {
+            const mode = document.getElementById('mode').value;
+            if (mode === "1") {
+                document.getElementById('proxyIpGroup').style.display = "flex";
+                document.getElementById('turnIpGroup').style.display = "none";
+            } else {
+                document.getElementById('proxyIpGroup').style.display = "none";
+                document.getElementById('turnIpGroup').style.display = "flex";
+            }
+        }
+
+        // 本地配置保存引擎 (自动化全参数记忆)
+        function saveConfig() {
+            const config = {
+                uuid: document.getElementById('uuid').value,
+                worker: document.getElementById('worker').value,
+                customAlias: document.getElementById('customAlias').value,
+                mode: document.getElementById('mode').value,
+                customProxyIp: document.getElementById('customProxyIp').value,
+                customTurnIp: document.getElementById('customTurnIp').value,
+                edValue: document.getElementById('edValue').value,
+                apiUrl: document.getElementById('apiUrl').value,
+                iplist: document.getElementById('iplist').value
+            };
+            localStorage.setItem('graintcp_handcraft_config', JSON.stringify(config));
+        }
+
+        // 本地配置读取引擎
+        function loadConfig() {
+            const rawData = localStorage.getItem('graintcp_handcraft_config');
+            if (!rawData) return; // 没有历史记录则使用 HTML 默认值
+            try {
+                const config = JSON.parse(rawData);
+                if (config.uuid !== undefined) document.getElementById('uuid').value = config.uuid;
+                if (config.worker !== undefined) document.getElementById('worker').value = config.worker;
+                if (config.customAlias !== undefined) document.getElementById('customAlias').value = config.customAlias;
+                if (config.mode !== undefined) document.getElementById('mode').value = config.mode;
+                if (config.customProxyIp !== undefined) document.getElementById('customProxyIp').value = config.customProxyIp;
+                if (config.customTurnIp !== undefined) document.getElementById('customTurnIp').value = config.customTurnIp;
+                if (config.edValue !== undefined) document.getElementById('edValue').value = config.edValue;
+                if (config.apiUrl !== undefined) document.getElementById('apiUrl').value = config.apiUrl;
+                if (config.iplist !== undefined) document.getElementById('iplist').value = config.iplist;
+            } catch (e) {
+                console.error("加载历史配置失败:", e);
+            }
+        }
+
+        async function mixAndGenerate() {
+            const apiUrl = document.getElementById('apiUrl').value.trim();
+            const manualText = document.getElementById('iplist').value;
+            const statusDiv = document.getElementById('apiStatus');
+            
+            let finalIpPool = [];
+            statusDiv.className = "status-msg";
+            statusDiv.innerText = "";
+
+            if (manualText.trim() !== "") {
+                const manualLines = manualText.split(/[\n\r]+/);
+                for (let line of manualLines) {
+                    if (line.trim()) finalIpPool.push(line.trim());
+                }
+            }
+
+            if (apiUrl) {
+                statusDiv.innerText = "正在拉取 API 远端 IP池...";
+                try {
+                    const response = await fetch(apiUrl);
+                    if (!response.ok) throw new Error(`HTTP 状态码错误: ${response.status}`);
+                    const textData = await response.text();
+                    const apiLines = textData.split(/[\n\r,]+/);
+                    let apiCount = 0;
+                    for (let line of apiLines) {
+                        if (line.trim()) {
+                            finalIpPool.push(line.trim());
+                            apiCount++;
+                        }
+                    }
+                    statusDiv.className = "status-msg text-success";
+                    statusDiv.innerText = `成功从 API 同步并追加了 ${apiCount} 个前端接入点！`;
+                } catch (error) {
+                    console.error(error);
+                    statusDiv.className = "status-msg text-danger";
+                    statusDiv.innerText = `API 拉取失败: ${error.message} (不影响已输入的手动IP组装)`;
+                }
+            }
+
+            finalIpPool = [...new Set(finalIpPool)];
+
+            if (finalIpPool.length === 0) {
+                alert("API 链接和手动粘贴框均为空，请至少填写一项！");
+                return;
+            }
+            buildVlessLinks(finalIpPool);
+        }
+
+        function buildVlessLinks(ipArray) {
+            const uuid = document.getElementById('uuid').value.trim();
+            const worker = document.getElementById('worker').value.trim();
+            const mode = document.getElementById('mode').value;
+            const ed = document.getElementById('edValue').value.trim();
+            const userAlias = document.getElementById('customAlias').value.trim();
+            
+            let results = [];
+            
+            for (let line of ipArray) {
+                let raw_line = line.trim();
+                if (!raw_line || raw_line.startsWith('//')) continue;
+
+                let cf_addr = raw_line;
+                let flag_tag = ""; 
+
+                if (raw_line.includes('#')) {
+                    let parts = raw_line.split('#');
+                    cf_addr = parts[0].trim();
+                    flag_tag = parts[1].trim();
+                }
+                
+                if (!cf_addr || cf_addr.includes(' ')) continue; 
+                if (cf_addr.includes(':') && !cf_addr.startsWith('[')) cf_addr = cf_addr.split(':')[0];
+
+                let raw_path = "";
+                let default_mode_name = "";
+                const hasEd = (ed !== "0" && ed !== "");
+                
+                if (mode === "1") {
+                    // 【模式 1：精调自愈的反代 ProxyIP 路径】
+                    const proxyIp = document.getElementById('customProxyIp').value.trim();
+                    default_mode_name = "GrainTCP-Proxy";
+                    
+                    if (proxyIp === "") {
+                        raw_path = hasEd ? `/${uuid}/?ed=${ed}` : `/${uuid}/`;
+                    } else {
+                        raw_path = hasEd ? `/${uuid}/?ip=${proxyIp}&ed=${ed}` : `/${uuid}/?ip=${proxyIp}`;
+                    }
+                } else {
+                    // 【模式 2：经典的 TURN 隧道路径】
+                    const turnIp = document.getElementById('customTurnIp').value.trim();
+                    default_mode_name = "GrainTCP-Turn";
+                    
+                    if (turnIp === "") {
+                        raw_path = hasEd ? `/?ed=${ed}` : `/`;
+                    } else {
+                        raw_path = hasEd ? `/turn://${turnIp}?ed=${ed}` : `/turn://${turnIp}`;
+                    }
+                }
+                
+                let encoded_path = encodeURIComponent(raw_path);
+                let prefix = flag_tag ? `[${flag_tag}]` : "";
+                
+                let core_name = userAlias !== "" ? userAlias : default_mode_name;
+                let alias = `${prefix}${core_name}`;
+                
+                let vless_url = `vless://${uuid}@${cf_addr}:443?encryption=none&security=tls&sni=${worker}&type=ws&host=${worker}&path=${encoded_path}#${encodeURIComponent(alias)}`;
+                results.push(vless_url);
+            }
+            
+            document.getElementById('output').value = results.join('\n');
+            document.getElementById('nodeCount').innerText = `当前总计混合生成节点数: ${results.length}`;
+        }
+
+        function copyToClipboard() {
+            const outputArea = document.getElementById('output'); outputArea.select();
+            document.execCommand('copy'); alert('已成功复制手搓节点！');
+        }
+    </script>
+</body>
+</html>
