@@ -3,12 +3,13 @@ const CFG = { id: '2523c510-9ff0-415b-9582-93949bfae7e3', chunk: 64 * 1024, dnPa
 // ===========================================
 // ProxyIP 区域分流配置
 // ===========================================
-const proxyIpAddrs = { EU: 'ProxyIP.DE.CMLiussss.net', HK: 'ProxyIP.HK.CMLiussss.net', AS: 'ProxyIP.SG.CMLiussss.net', JP: 'ProxyIP.JP.CMLiussss.net', US: 'ProxyIP.US.CMLiussss.net' };
+const proxyIpAddrs = { HK: 'ProxyIP.HK.CMLiussss.net', JP: 'ProxyIP.JP.CMLiussss.net', SG: 'ProxyIP.SG.CMLiussss.net', US: 'ProxyIP.US.CMLiussss.net' EU: 'ProxyIP.DE.CMLiussss.net', };
 const coloRegions = {
-    JP: new Set(['FUK', 'ICN', 'KIX', 'NRT', 'OKA']),
     HK: new Set(['HKG', 'TPE', 'KHH']),
+    JP: new Set(['NRT', 'ICN', 'KIX', 'FUK', 'OKA']),
+    SG: new Set(['ADL', 'AKL', 'AMD', 'BKK', 'BLR', 'BNE', 'BOM', 'CBR', 'CCU', 'CEB', 'CGK', 'CMB', 'COK', 'DAC', 'DEL', 'HAN', 'HYD', 'ISB', 'JHB', 'JOG', 'KCH', 'KHI', 'KTM', 'KUL', 'LHE', 'MAA', 'MEL', 'MFM', 'MLE', 'MNL', 'NAG', 'NOU', 'PAT', 'PBH', 'PER', 'PNH', 'SGN', 'SIN', 'SYD', 'ULN', 'VTE'])
+    US: new Set(['LAX', 'SJC', 'SLC', 'ORD', 'IAD']),
     EU: new Set(['ACC', 'ADB', 'ALA', 'ALG', 'AMM', 'AMS', 'ARN', 'ATH', 'BAH', 'BCN', 'BEG', 'BGW', 'BOD', 'BRU', 'BTS', 'BUD', 'CAI', 'CDG', 'CPH', 'CPT', 'DAR', 'DKR', 'DMM', 'DOH', 'DUB', 'DUR', 'DUS', 'DXB', 'EBB', 'EDI', 'EVN', 'FCO', 'FRA', 'GOT', 'GVA', 'HAM', 'HEL', 'HRE', 'IST', 'JED', 'JIB', 'JNB', 'KBP', 'KEF', 'KWI', 'LAD', 'LED', 'LHR', 'LIS', 'LOS', 'LUX', 'LYS', 'MAD', 'MAN', 'MCT', 'MPM', 'MRS', 'MUC', 'MXP', 'NBO', 'OSL', 'OTP', 'PMO', 'PRG', 'RIX', 'RUH', 'RUN', 'SKG', 'SOF', 'STR', 'TBS', 'TLL', 'TLV', 'TUN', 'VIE', 'VNO', 'WAW', 'ZAG', 'ZRH']),
-    AS: new Set(['ADL', 'AKL', 'AMD', 'BKK', 'BLR', 'BNE', 'BOM', 'CBR', 'CCU', 'CEB', 'CGK', 'CMB', 'COK', 'DAC', 'DEL', 'HAN', 'HYD', 'ISB', 'JHB', 'JOG', 'KCH', 'KHI', 'KTM', 'KUL', 'LHE', 'MAA', 'MEL', 'MFM', 'MLE', 'MNL', 'NAG', 'NOU', 'PAT', 'PBH', 'PER', 'PNH', 'SGN', 'SIN', 'SYD', 'ULN', 'VTE'])
 };
 const coloToProxyMap = new Map();
 for (const [region, colos] of Object.entries(coloRegions)) { for (const colo of colos) coloToProxyMap.set(colo, proxyIpAddrs[region]); }
