@@ -3,13 +3,14 @@ const CFG = { id: '2523c510-9ff0-415b-9582-93949bfae7e3', chunk: 64 * 1024, dnPa
 // ===========================================
 // ProxyIP 区域分流配置
 // ===========================================
-const proxyIpAddrs = { HK: 'ProxyIP.HK.CMLiussss.net', JP: 'ProxyIP.JP.CMLiussss.net', SG: 'ProxyIP.SG.CMLiussss.net', US: 'ProxyIP.US.CMLiussss.net', EU: 'ProxyIP.DE.CMLiussss.net', };
+const proxyIpAddrs = { JP: 'jp.tenc.de5.net', SG: 'sg.tenc.de5.net', TW: 'tw.tenc.de5.net', KR: 'kr.tenc.de5.net', US: 'us.tenc.de5.net', EU: 'ProxyIP.DE.CMLiussss.net', };
 const coloRegions = {
-    HK: new Set(['HKG', 'TPE', 'KHH']),
-    JP: new Set(['NRT', 'ICN', 'KIX', 'FUK', 'OKA']),
-    SG: new Set(['ADL', 'AKL', 'AMD', 'BKK', 'BLR', 'BNE', 'BOM', 'CBR', 'CCU', 'CEB', 'CGK', 'CMB', 'COK', 'DAC', 'DEL', 'HAN', 'HYD', 'ISB', 'JHB', 'JOG', 'KCH', 'KHI', 'KTM', 'KUL', 'LHE', 'MAA', 'MEL', 'MFM', 'MLE', 'MNL', 'NAG', 'NOU', 'PAT', 'PBH', 'PER', 'PNH', 'SGN', 'SIN', 'SYD', 'ULN', 'VTE']),
-    US: new Set(['LAX', 'SJC', 'SLC', 'ORD', 'IAD']),
-    EU: new Set(['ACC', 'ADB', 'ALA', 'ALG', 'AMM', 'AMS', 'ARN', 'ATH', 'BAH', 'BCN', 'BEG', 'BGW', 'BOD', 'BRU', 'BTS', 'BUD', 'CAI', 'CDG', 'CPH', 'CPT', 'DAR', 'DKR', 'DMM', 'DOH', 'DUB', 'DUR', 'DUS', 'DXB', 'EBB', 'EDI', 'EVN', 'FCO', 'FRA', 'GOT', 'GVA', 'HAM', 'HEL', 'HRE', 'IST', 'JED', 'JIB', 'JNB', 'KBP', 'KEF', 'KWI', 'LAD', 'LED', 'LHR', 'LIS', 'LOS', 'LUX', 'LYS', 'MAD', 'MAN', 'MCT', 'MPM', 'MRS', 'MUC', 'MXP', 'NBO', 'OSL', 'OTP', 'PMO', 'PRG', 'RIX', 'RUH', 'RUN', 'SKG', 'SOF', 'STR', 'TBS', 'TLL', 'TLV', 'TUN', 'VIE', 'VNO', 'WAW', 'ZAG', 'ZRH']),
+    JP: new Set(['NRT', 'KIX', 'FUK', 'OKA', 'HKG', 'MFM', 'ULN']),
+    SG: new Set(['SIN', 'BKK', 'CGK', 'KUL', 'SGN', 'HAN', 'MNL', 'CEB', 'PNH', 'VTE', 'JHB', 'JOG', 'KCH', 'BOM', 'DEL', 'BLR', 'HYD', 'MAA', 'CCU', 'AMD', 'COK', 'PAT', 'KHI', 'LHE', 'ISB', 'DAC', 'KTM', 'CMB', 'MLE', 'PBH']),
+    TW: new Set(['TPE', 'KHH', 'RMQ', 'TSA']),
+    KR: new Set(['ICN']),
+    US: new Set(['LAX', 'SJC', 'SLC', 'ORD', 'IAD', 'SYD', 'MEL', 'BNE', 'PER', 'ADL', 'CBR', 'AKL', 'NOU' ]),
+	EU: new Set(['AMS', 'FRA', 'CDG', 'LHR', 'FCO', 'MAD', 'ZRH', 'VIE', 'BRU', 'CPH', 'ARN', 'HEL', 'OSL', 'DUS', 'MUC', 'HAM', 'STR', 'LYS', 'MRS', 'BOD', 'MXP', 'PMO', 'EDI', 'MAN', 'LIS', 'BCN', 'PRG', 'BUD', 'WAW', 'SOF', 'OTP', 'ATH', 'SKG', 'IST', 'ADB', 'BEG', 'ZAG', 'BTS', 'RIX', 'TLL', 'VNO', 'KBP', 'LED', 'LUX', 'KEF', 'EVN', 'TBS', 'ALA', 'DXB', 'DOH', 'RUH', 'JED', 'DMM', 'KWI', 'BAH', 'MCT', 'AMM', 'TLV', 'BGW', 'CAI', 'ALG', 'TUN', 'CAS', 'DKR', 'ACC', 'LOS', 'LAD', 'CPT', 'JNB', 'DUR', 'NBO', 'EBB', 'DAR', 'HRE', 'MPM', 'JIB', 'RUN']),
 };
 const coloToProxyMap = new Map();
 for (const [region, colos] of Object.entries(coloRegions)) { for (const colo of colos) coloToProxyMap.set(colo, proxyIpAddrs[region]); }
