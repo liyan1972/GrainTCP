@@ -1,3 +1,4 @@
+// ====== GrainTCP完整代理功能板测试@ym94203 ======
 // ====== 用户配置区（可修改） ======
 const CFG = { id: '2523c510-9ff0-415b-9582-93949bfae7e3', chunk: 64 * 1024, dnPack: 32 * 1024, dnTail: 512, dnMs: 0, upPack: 16 * 1024, upQMax: 256 * 1024, maxED: 8 * 1024, concur: 4, autoConcur: true };
 let ECH = true;
