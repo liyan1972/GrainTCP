@@ -20,7 +20,7 @@ cdns.doon.eu.org#优选域名
 img.yust.eu.org#优选域名
 xin.usfox.qzz.io#优选域名
 cdn.262832.xyz#优选域名
-cloudflare.cfgo.cc#优选域名
+www.nike.qa#优选域名
 nrt.xxxxxxxx.nyc.mn#优选域名
 www.nexusmods.com#优选域名
 freeyx.cloudflare88.eu.org#优选域名
