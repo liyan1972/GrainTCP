@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>CSV → VLESS 智能节点处理工作台</title>
+<style>
+    :root {
+        --primary-color: #0066cc;
+        --hover-color: #0056b3;
+        --danger-color: #ff4d4f;
+        --success-color: #28a745;
+        --border-radius-sm: 6px;
+        --border-radius-md: 8px;
+        --border-radius-lg: 12px;
+        --glass-bg: rgba(255, 255, 255, 0.85);
+        --glass-border: rgba(255, 255, 255, 0.4);
+    }
+
+    body { 
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; 
+        margin: 0; padding: 20px; min-height: 100vh; box-sizing: border-box; background-color: #f0f2f5; 
+    }
+    #bgCanvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; }
+
+    .container { 
+        max-width: 1100px; margin: auto; background: var(--glass-bg); backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px); padding: 30px; border-radius: var(--border-radius-lg); 
+        box-shadow: 0 8px 32px rgba(0,0,0,.08); border: 1px solid var(--glass-border);
+    }
+    
+    h1 { color: #1a1a1a; margin-top: 0; margin-bottom: 20px; font-size: 24px; font-weight: 600; text-align: center;}
+    
+    .config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; }
+    .form-item { display: flex; flex-direction: column; gap: 5px; }
+    .form-item label { font-weight: 600; color: #444; font-size: 13px; margin-left: 2px; }
+    
+    input, select, textarea { 
+        padding: 10px 12px; font-size: 14px; border: 1px solid #ddd; 
+        border-radius: var(--border-radius-md); box-sizing: border-box; 
+        background: rgba(255,255,255,0.9); transition: all 0.2s ease;
+    }
+    input:focus, select:focus { border-color: var(--primary-color); outline: none; box-shadow: 0 0 0 3px rgba(0,102,204,0.15); }
+    
+    #output { height: 120px; margin-top: 10px; font-family: 'SF Mono', monospace; font-size: 12px; background:#f8f9fa; resize: none; width: 100%; border-radius: var(--border-radius-md); border: 1px solid #eee; padding: 12px; }
+    
+    button { padding: 10px 20px; background: var(--primary-color); color: #fff; border: none; border-radius: var(--border-radius-md); cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; }
+    button:hover { background: var(--hover-color); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,102,204,0.2); }
+    button.outline { background: transparent; border: 1px solid var(--primary-color); color: var(--primary-color); }
+    button.outline:hover { background: rgba(0,102,204,0.05); }
+
+    .more-btn { display: block; margin: 15px auto 5px; background: none; color: var(--primary-color); border: 1px solid #ddd; font-size: 12px; padding: 5px 15px; border-radius: 20px; }
+    .more-btn:hover { background: #f0f7ff; }
+    
+    .table-wrapper { width: 100%; max-height: 300px; overflow: auto; border: 1px solid #eee; border-radius: var(--border-radius-md); background: #fff; margin-bottom: 20px; }
+    table { border-collapse: collapse; font-size: 13px; table-layout: fixed; width: max-content; min-width: 100%; }
+    th, td { border-bottom: 1px solid #f0f0f0; border-right: 1px solid #f0f0f0; width: 60px; min-width: 60px; max-width: 60px; padding: 0; position: relative; }
+    th { background: #f9fafb; position: sticky; top: 0; z-index: 10; color: #666; height: 40px; }
+    
+    .cell-content { display: block; width: 100%; height: 40px; line-height: 40px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; outline: none; box-sizing: border-box; }
+    .td-edit:focus { background: #f0f7ff; text-overflow: clip; overflow: visible; white-space: normal; position: relative; z-index: 5; box-shadow: inset 0 0 0 2px var(--primary-color); }
+    
+    .preview-col { width: 140px !important; min-width: 140px !important; max-width: 140px !important; background: #f8f9fc; color: var(--primary-color); font-style: italic; }
+    .del-col-icon { position: absolute; right: 2px; top: 2px; background: var(--danger-color); color: #fff; width: 16px; height: 16px; line-height: 14px; border-radius: 3px; font-size: 12px; cursor: pointer; opacity: 0; transition: 0.2s; z-index: 11; }
+    th:hover .del-col-icon { opacity: 0.8; }
+
+    fieldset { border: 1px solid rgba(0,0,0,0.08); padding: 20px; margin-bottom: 25px; border-radius: var(--border-radius-lg); background: rgba(250,250,250,0.5); }
+    legend { font-weight: 600; padding: 0 12px; color: #333; font-size: 15px; }
+
+    #autoHeaderTip { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; padding: 10px 15px; border-radius: var(--border-radius-md); font-size: 13px; line-height: 1.5; margin-bottom: 15px; display: none; }
+
+    .copy-area { display: flex; align-items: center; gap: 10px; position: relative; }
+    #copyTip { position: absolute; right: 0; top: -25px; color: var(--success-color); font-weight: 600; font-size: 13px; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    #copyTip.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+
+<div class="container">
+    <h1>CSV → VLESS 智能节点处理工作台</h1>
+
+    <div class="file-input" style="margin-bottom: 30px; text-align: center;">
+        <div style="display:inline-flex; gap:12px; align-items:center; background: #fff; padding: 10px 20px; border-radius: 50px; border: 1px solid #eee;">
+            <input type="file" id="csvFile" accept=".csv,text/csv">
+            <span style="color:#ccc;">|</span>
+            <button class="outline" style="border-radius: 50px;" onclick="initEmptyTable()">🔄 重置清空</button>
+        </div>
+    </div>
+
+    <div id="dataPreviewArea">
+        <div id="autoHeaderTip">
+            ⚡ <b>已检测到无表头数据：</b>点击对应的列1、列2字样即可修改为“<b>数据中心</b>”、“<b>地区</b>”、“<b>城市</b>”或“<b>延迟</b>”表头并在右侧预览中合成节点名。
+        </div>
+        <div class="table-wrapper"><table id="dataTable"><thead id="dataHead"></thead><tbody id="dataBody"></tbody></table></div>
+        <div style="text-align: right; font-size: 12px; color: #999; margin-bottom: 10px;">共记录<span style="color: var(--primary-color);"><b id="rowCount">0</b></span>个节点</div>
+    </div>
+
+    <fieldset>
+        <legend>🔧 配置 VLESS 全局参数</legend>
+        <div class="config-grid">
+            <div class="form-item" style="grid-column: span 2;"><label>UUID</label><input type="text" id="uuid" value=""></div>
+            <div class="form-item"><label>加密方式 (encryption)</label><input type="text" id="encryption" value="none"></div>
+            <div class="form-item"><label>传输协议 (type)</label><select id="type"><option value="ws">ws</option><option value="grpc">grpc</option><option value="tcp">tcp</option><option value="http">http</option></select></div>
+            <div class="form-item"><label>安全层 (security)</label><select id="security"><option value="tls">tls</option><option value="reality">reality</option><option value="none">none</option></select></div>
+            <div class="form-item"><label>指纹 (fp)</label><select id="fp"><option value="chrome">chrome</option><option value="firefox">firefox</option><option value="safari">safari</option><option value="edge">edge</option><option value="ios">ios</option><option value="random">random</option></select></div>
+            <div class="form-item"><label>ALPN</label><input type="text" id="alpn" value="h3"></div>
+            <div class="form-item"><label>跳过证书验证 (insecure)</label><select id="allowInsecure"><option value="1">是 (1)</option><option value="0">否 (0)</option></select></div>
+            <div class="form-item"><label>SNI</label><input type="text" id="sni" value="abc.com"></div>
+            <div class="form-item"><label>Host</label><input type="text" id="host" value="abc.com"></div>
+            <div class="form-item" style="grid-column: span 2;"><label>Path (/?ed=2560)</label><input type="text" id="path" value="%2F%3Fed%3D2560"></div>
+        </div>
+
+        <button class="more-btn" id="toggleMore">更多高级选项 (ECH) ▼</button>
+
+        <div id="moreOptions" style="display: none; margin-top: 15px; border-top: 1px dashed #ddd; padding-top: 15px;">
+            <div class="config-grid">                
+                <!-- ECH DNS服务 -->
+                <div class="form-item">
+                    <label>EchConfig DNS服务</label>
+                    <select id="echDNSSelect" onchange="toggleCustom('echDNSSelect', 'echDNSCustom')">
+                        <option value="">未启用</option>
+                        <option value="udp://208.67.220.220:443" data-region="international">
+                                    udp://208.67.220.220:443（OpenDNS）</option>
+                        <option value="udp://149.112.112.112:9953" data-region="international">
+                                    udp://149.112.112.112:9953（Quad9）</option>
+                        <option value="udp://45.90.28.0:5353" data-region="international">
+                                    udp://45.90.28.0:5353（NextDNS）</option>
+                        <option value="udp://188.166.206.224:5003" data-region="international">
+                                    udp://188.166.206.224:5003（Tiarap）</option>
+                        <option value="https://doh.applied-privacy.net/query" data-region="international">
+                                    https://doh.applied-privacy.net/query（Applied Privacy DoH）</option>
+                        <option value="https://odvr.nic.cz/doh" data-region="international">
+                                    https://odvr.nic.cz/doh（CZ.NIC DoH）</option>
+                        <option value="https://doh.cmliussss.net/CMLiussss" data-region="international">
+                                    https://doh.cmliussss.net/CMLiussss（Cloudflare DoH：CM镜像）</option>
+                        <option value="https://doh.cmliussss.com/CMLiussss" data-region="international">
+                                    https://doh.cmliussss.com/CMLiussss（Google DoH：CM镜像）</option>
+                        <option value="https://dns.alidns.com/dns-query" data-region="domestic">
+                                    https://dns.alidns.com/dns-query（阿里 DoH：国内DNS需搭配设置ECH解析域名，是否可用需自行验证）小白推荐选这个！！！</option>
+                        <option value="https://sm2.doh.pub/dns-query" data-region="domestic">
+                                    https://sm2.doh.pub/dns-query（腾讯国密 DoH：国内DNS需搭配设置ECH解析域名，是否可用需自行验证）</option>
+                        <option value="https://doh.360.cn/dns-query" data-region="domestic">
+                                    https://doh.360.cn/dns-query（360 DoH：国内DNS需搭配设置ECH解析域名，是否可用需自行验证）</option>
+                        <option value="https://doh.onedns.net/dns-query" data-region="domestic">
+                                    https://doh.onedns.net/dns-query（OneDNS DoH：国内DNS需搭配设置ECH解析域名，是否可用需自行验证）</option>
+                        <option value="custom">自定义</option>
+                    </select>
+                    <input type="text" id="echDNSCustom" placeholder="udp://... 或 https://..." style="display:none; margin-top:5px;">
+                </div>
+
+                <!-- ECH 解析域名 -->
+                <div class="form-item">
+                    <label>EchConfig 解析域名</label>
+                    <select id="echSNISelect" onchange="toggleCustom('echSNISelect', 'echSNICustom')">
+                        <option value="">未启用</option>
+                        <option value="cloudflare-ech.com">cloudflare-ech.com（Cloudflare ECH域名）小白推荐选这个！！！</option>
+                        <option value="crypto.cloudflare.com">crypto.cloudflare.com（Cloudflare密码学服务）</option>
+                        <option value="encryptedsni.com">encryptedsni.com（Cloudflare加密SNI）</option>
+                        <option value="icook.hk">icook.hk（愛料理 HK）</option>
+                        <option value="cm.edu.kg">cm.edu.kg（CM科技大学）</option>
+                        <option value="godotengine.org">godotengine.org（Godot 开源游戏引擎）</option>
+                        <option value="www.britannica.com">www.britannica.com（大英百科全书）</option>
+                        <option value="www.prometheus.io">www.prometheus.io（Prometheus 监控系统）</option>
+                        <option value="www.kyocera.com">www.kyocera.com（Kyocera 集团官网）</option>
+                        <option value="celestia.org">celestia.org（Celestia 模块化区块链）</option>
+                        <option value="lido.fi">lido.fi（Lido 流动质押）</option>
+                        <option value="custom">自定义</option>
+                    </select>
+                    <input type="text" id="echSNICustom" placeholder="输入自定义域名" style="display:none; margin-top:5px;">
+                </div>
+            </div>
+        </div>
+    </fieldset>
+
+    <button id="generateBtn" style="width: 100%;">🚀 一键生成 VLESS 链接库</button>
+
+    <div style="margin-top:30px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0; font-size: 16px; color:#333;">🔗 生成结果</h3>
+            <div class="copy-area"><span id="copyTip">✔ 已复制到剪贴板</span><button id="copyBtn" class="outline" style="padding: 6px 15px; font-size: 12px;">📋 复制全部内容</button></div>
+        </div>
+        <textarea id="output" readonly placeholder="生成结果将在此处显示..."></textarea>
+    </div>
+</div>
+
+<script>
+/* 背景动画 */
+const canvas = document.getElementById('bgCanvas'); const ctx = canvas.getContext('2d'); let width, height, particles = [];
+function resize() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; }
+window.addEventListener('resize', resize); resize();
+class Particle {
+    constructor() { this.x = Math.random() * width; this.y = Math.random() * height; this.vx = (Math.random() - 0.5) * 1.2; this.vy = (Math.random() - 0.5) * 1.2; this.radius = Math.random() * 2 + 1; }
+    update() { this.x += this.vx; this.y += this.vy; if (this.x < 0 || this.x > width) this.vx = -this.vx; if (this.y < 0 || this.y > height) this.vy = -this.vy; }
+    draw() { ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fillStyle = 'rgba(0, 102, 204, 0.3)'; ctx.fill(); }
+}
+for (let i = 0; i < 60; i++) particles.push(new Particle());
+function animate() {
+    ctx.clearRect(0, 0, width, height);
+    particles.forEach((p, i) => { p.update(); p.draw(); for (let j = i + 1; j < particles.length; j++) { const d = Math.sqrt((p.x - particles[j].x)**2 + (p.y - particles[j].y)**2); if (d < 110) { ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(particles[j].x, particles[j].y); ctx.strokeStyle = `rgba(0, 102, 204, ${0.2*(1-d/110)})`; ctx.stroke(); } } });
+    requestAnimationFrame(animate);
+}
+animate();
+
+/* 逻辑处理 */
+let globalHeaders = [], globalData = [];
+
+// 切换高级选项显示
+document.getElementById('toggleMore').onclick = function() {
+    const box = document.getElementById('moreOptions');
+    const isHidden = box.style.display === 'none';
+    box.style.display = isHidden ? 'block' : 'none';
+    this.innerText = isHidden ? '收起高级选项 (ECH) ▲' : '更多高级选项 (ECH) ▼';
+};
+
+// 切换自定义输入框
+function toggleCustom(selectId, customId) {
+    const sel = document.getElementById(selectId);
+    const cus = document.getElementById(customId);
+    cus.style.display = sel.value === 'custom' ? 'block' : 'none';
+}
+
+function initEmptyTable() {
+    globalHeaders = ['IP', '端口', 'TLS', '数据中心', '地区', '延迟'];
+    globalData = [{_id: 'r1', IP:'', '端口':'', TLS:'', '地区':'', '延迟':''}];
+    document.getElementById('csvFile').value = ''; document.getElementById('output').value = '';
+    document.getElementById('autoHeaderTip').style.display = 'none'; renderTable();
+}
+
+document.getElementById('csvFile').addEventListener('change', async (e) => {
+    if(!e.target.files.length) return;
+    const file = e.target.files[0]; const reader = new FileReader();
+    reader.onload = (ev) => {
+        const text = new TextDecoder('utf-8').decode(new Uint8Array(ev.target.result));
+        const lines = text.split(/\r?\n/).filter(l => l.trim()); if(!lines.length) return;
+        const firstRow = lines[0].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+        const ipRegex = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/;
+        const isNoHeader = firstRow.some(v => ipRegex.test(v) || /^\d+$/.test(v));
+        if(isNoHeader) {
+            globalHeaders = firstRow.map((v, i) => ipRegex.test(v) ? 'IP' : (/^\d+$/.test(v) ? '端口' : `列${i+1}`));
+            globalData = lines.map(l => { const row = {_id: Math.random().toString(36).substr(2, 9)}; l.split(',').forEach((v, i) => row[globalHeaders[i]] = v.trim()); return row; });
+            document.getElementById('autoHeaderTip').style.display = 'block';
+        } else {
+            globalHeaders = firstRow;
+            globalData = lines.slice(1).map(l => { const row = {_id: Math.random().toString(36).substr(2, 9)}; l.split(',').forEach((v, i) => row[globalHeaders[i]] = v.trim()); return row; });
+            document.getElementById('autoHeaderTip').style.display = 'none';
+        }
+        renderTable();
+    };
+    reader.readAsArrayBuffer(file);
+});
+
+function getNodeName(row) {
+    const find = (keys) => { const k = globalHeaders.find(h => keys.some(s => h.toLowerCase().includes(s))); return k ? (row[k] || '') : ''; };
+    const parts = [find(['数据','isp']), find(['地区','国家']), find(['城市']), find(['延迟','ping'])].filter(v => v);
+    return parts.length ? parts.join('-') : 'Custom_Node';
+}
+
+function renderTable() {
+    const head = document.getElementById('dataHead'), body = document.getElementById('dataBody');
+    head.innerHTML = ''; body.innerHTML = ''; document.getElementById('rowCount').innerText = globalData.length;
+    const trH = document.createElement('tr');
+    globalHeaders.forEach((h, index) => {
+        const th = document.createElement('th');
+        th.innerHTML = `<div class="cell-content" contenteditable="true" onblur="updateHeader(this, ${index})">${h}</div><span class="del-col-icon" onclick="delCol('${h}')">&times;</span>`;
+        trH.appendChild(th);
+    });
+    trH.innerHTML += `<th class="preview-col">预览名</th>`; head.appendChild(trH);
+    globalData.forEach(row => {
+        const tr = document.createElement('tr');
+        globalHeaders.forEach(h => {
+            const td = document.createElement('td');
+            td.innerHTML = `<div class="cell-content td-edit" contenteditable="true" oninput="updateCell(this, '${row._id}', '${h}')">${row[h] || ''}</div>`;
+            tr.appendChild(td);
+        });
+        const name = getNodeName(row); tr.innerHTML += `<td class="preview-col"><div class="cell-content" title="${name}">${name}</div></td>`;
+        body.appendChild(tr);
+    });
+}
+
+function updateHeader(el, idx) {
+    const old = globalHeaders[idx], val = el.innerText.trim(); if(!val || val === old) return;
+    globalHeaders[idx] = val; globalData.forEach(r => { r[val] = r[old]; delete r[old]; }); renderTable();
+}
+function updateCell(el, id, h) {
+    const row = globalData.find(r => r._id === id);
+    if(row) { row[h] = el.innerText; el.closest('tr').lastChild.firstChild.innerText = getNodeName(row); }
+}
+function delCol(name) {
+    if(confirm(`确定删除 [${name}] 列？`)) { globalHeaders = globalHeaders.filter(h => h !== name); globalData.forEach(r => delete r[name]); renderTable(); }
+}
+
+document.getElementById('generateBtn').onclick = () => {
+    const c = (id) => document.getElementById(id).value;
+    const findK = (keys) => globalHeaders.find(h => keys.some(s => h.toLowerCase().includes(s)));
+    
+    // 处理 ECH
+    let echVal = "";
+    const sni = c('echSNISelect') === 'custom' ? document.getElementById('echSNICustom').value : c('echSNISelect');
+    const dns = c('echDNSSelect') === 'custom' ? document.getElementById('echDNSCustom').value : c('echDNSSelect');
+    if(sni && dns) echVal = sni + "+" + dns;
+
+    const links = globalData.map(r => {
+        const ipK = findK(['ip', '地址']), portK = findK(['端口', 'port']);
+        const ip = ipK ? r[ipK] : '', port = portK ? r[portK] : ''; if(!ip) return null;
+        let sec = c('security'); const tlsK = findK(['tls']);
+        if(tlsK && r[tlsK]) sec = (['true','yes','1','开启'].includes(r[tlsK].toLowerCase())) ? 'tls' : 'none';
+        const ins = c('allowInsecure');
+        
+        let url = `vless://${c('uuid')}@${ip}:${port || 443}?encryption=${c('encryption')}&security=${sec}&sni=${encodeURIComponent(c('sni'))}&fp=${c('fp')}&alpn=${encodeURIComponent(c('alpn'))}&insecure=${ins}&allowInsecure=${ins}&type=${c('type')}&host=${encodeURIComponent(c('host'))}&path=${c('path')}`;
+        if(echVal) url += `&ech=${encodeURIComponent(echVal)}`;
+        url += `#${encodeURIComponent(getNodeName(r))}`;
+        return url;
+    }).filter(l => l);
+    document.getElementById('output').value = links.join('\n');
+};
+
+document.getElementById('copyBtn').onclick = async () => {
+    const o = document.getElementById('output'); if(!o.value) return;
+    try {
+        await navigator.clipboard.writeText(o.value);
+        const tip = document.getElementById('copyTip'); tip.classList.add('show'); setTimeout(() => tip.classList.remove('show'), 2000);
+    } catch (err) {
+        o.select(); document.execCommand('copy');
+        const tip = document.getElementById('copyTip'); tip.classList.add('show'); setTimeout(() => tip.classList.remove('show'), 2000);
+    }
+};
+
+initEmptyTable();
+</script>
+</body>
+</html>
