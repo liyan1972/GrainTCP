@@ -1,8 +1,5 @@
 const CFG = { id: '2523c510-9ff0-415b-9582-93949bfae7e3', chunk: 64 * 1024, dnPack: 32 * 1024, dnTail: 512, dnMs: 0, upPack: 16 * 1024, upQMax: 256 * 1024, maxED: 8 * 1024, concur: 4 };
-
-// ===========================================
 // ProxyIP 区域分流配置
-// ===========================================
 const proxyIpAddrs = { JP: 'ProxyIP.JP.CMLiussss.net', SG: 'ProxyIP.SG.CMLiussss.net', TW: 'tw.william.us.ci', KR: 'ProxyIP.KR.CMLiussss.net', US: 'ProxyIP.US.CMLiussss.net', EU: 'ProxyIP.DE.CMLiussss.net', };
 const coloRegions = {
     JP: new Set(['NRT', 'KIX', 'FUK', 'OKA', 'HKG', 'MFM', 'ULN']),
@@ -15,7 +12,6 @@ const coloRegions = {
 const coloToProxyMap = new Map();
 for (const [region, colos] of Object.entries(coloRegions)) { for (const colo of colos) coloToProxyMap.set(colo, proxyIpAddrs[region]); }
 // ===========================================
-
 export default { fetch: req => req.headers.get('Upgrade')?.toLowerCase() === 'websocket' ? ws(req) : new Response('Hello world!') }; const hex = c => (c > 64 ? c + 9 : c) & 0xF;
 const idB = new Uint8Array(16), dec = new TextDecoder(); for (let i = 0, p = 0, c, h; i < 16; i++) { c = CFG.id.charCodeAt(p++); c === 45 && (c = CFG.id.charCodeAt(p++)); h = hex(c); c = CFG.id.charCodeAt(p++); c === 45 && (c = CFG.id.charCodeAt(p++)); idB[i] = h << 4 | hex(c); }
 const [I0, I1, I2, I3, I4, I5, I6, I7, I8, I9, I10, I11, I12, I13, I14, I15] = idB;
@@ -54,11 +50,9 @@ const ws = async req => {
   const toU8 = d => d instanceof Uint8Array ? d : ArrayBuffer.isView(d) ? new Uint8Array(d.buffer, d.byteOffset, d.byteLength) : new Uint8Array(d);
   const sow = d => { const u = toU8(d), n = u.byteLength; if (!n) return 1; if (uq.sow(u)) return 1; wither(); return 0; };
   const thresh = async () => { if (busy || closed) return; busy = true; try { for (;;) {
-    if (closed) break; if (!sock) { const [d] = uq.bundle(); if (!d) break; const r = vless(d); if (!r) throw wither(); server.send(new Uint8Array([d[0], 0])); const host = addr(r.addrType, r.targetAddrBytes), port = r.port, payload = d.subarray(r.dataOffset); 
-    
+    if (closed) break; if (!sock) { const [d] = uq.bundle(); if (!d) break; const r = vless(d); if (!r) throw wither(); server.send(new Uint8Array([d[0], 0])); const host = addr(r.addrType, r.targetAddrBytes), port = r.port, payload = d.subarray(r.dataOffset);   
     // ===== 核心改动点：增加 catch 降级到 ProxyIP =====
-    sock = await raceSprout(fetcher, host, port).catch(() => raceSprout(fetcher, proxyTarget, 443)); 
-    
+    sock = await raceSprout(fetcher, host, port).catch(() => raceSprout(fetcher, proxyTarget, 443));     
     if (!sock) throw wither(); curW = sock.writable.getWriter(); const [first] = uq.bundle(payload); first?.byteLength && await curW.write(first); mill(sock.readable, server).finally(() => wither()); continue; }
     const [d] = uq.bundle(); if (!d) break; await curW.write(d);
   } } catch { wither(); } finally { busy = false; !uq.empty && !closed && queueMicrotask(thresh); } };
