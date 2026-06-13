@@ -2,9 +2,9 @@ const CFG = { id: '2523c510-9ff0-415b-9582-93949bfae7e3', chunk: 64 * 1024, dnPa
 // ProxyIP 区域分流配置
 const proxyIpAddrs = { JP: 'ProxyIP.JP.CMLiussss.net', SG: 'ProxyIP.SG.CMLiussss.net', TW: 'tw.william.us.ci', KR: 'ProxyIP.KR.CMLiussss.net', US: 'ProxyIP.US.CMLiussss.net', EU: 'ProxyIP.DE.CMLiussss.net', };
 const coloRegions = {
-    JP: new Set(['NRT', 'KIX', 'FUK', 'OKA', 'HKG', 'MFM', 'ULN']),
+    JP: new Set(['NRT', 'KIX', 'FUK', 'OKA', 'ULN']),
     SG: new Set(['SIN', 'BKK', 'CGK', 'KUL', 'SGN', 'HAN', 'MNL', 'CEB', 'PNH', 'VTE', 'JHB', 'JOG', 'KCH', 'BOM', 'DEL', 'BLR', 'HYD', 'MAA', 'CCU', 'AMD', 'COK', 'PAT', 'KHI', 'LHE', 'ISB', 'DAC', 'KTM', 'CMB', 'MLE', 'PBH']),
-    TW: new Set(['TPE', 'KHH', 'RMQ', 'TSA']),
+    TW: new Set(['TPE', 'KHH', 'RMQ', 'TSA', 'HKG', 'MFM',]),
     KR: new Set(['ICN']),
     US: new Set(['LAX', 'SJC', 'SLC', 'ORD', 'IAD', 'SYD', 'MEL', 'BNE', 'PER', 'ADL', 'CBR', 'AKL', 'NOU' ]),
 	EU: new Set(['AMS', 'FRA', 'CDG', 'LHR', 'FCO', 'MAD', 'ZRH', 'VIE', 'BRU', 'CPH', 'ARN', 'HEL', 'OSL', 'DUS', 'MUC', 'HAM', 'STR', 'LYS', 'MRS', 'BOD', 'MXP', 'PMO', 'EDI', 'MAN', 'LIS', 'BCN', 'PRG', 'BUD', 'WAW', 'SOF', 'OTP', 'ATH', 'SKG', 'IST', 'ADB', 'BEG', 'ZAG', 'BTS', 'RIX', 'TLL', 'VNO', 'KBP', 'LED', 'LUX', 'KEF', 'EVN', 'TBS', 'ALA', 'DXB', 'DOH', 'RUH', 'JED', 'DMM', 'KWI', 'BAH', 'MCT', 'AMM', 'TLV', 'BGW', 'CAI', 'ALG', 'TUN', 'CAS', 'DKR', 'ACC', 'LOS', 'LAD', 'CPT', 'JNB', 'DUR', 'NBO', 'EBB', 'DAR', 'HRE', 'MPM', 'JIB', 'RUN']),
